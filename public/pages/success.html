@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Placed! · SportZone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="logo" href="/">SPORT<span>ZONE</span></a>
+  <nav class="nav-links" id="nav-auth">
+    <a href="/login">Login</a>
+    <a class="btn btn-primary" href="/signup">Sign Up</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="success-card fade-in">
+    <div class="success-icon">🏆</div>
+    <h1>Order Confirmed!</h1>
+    <p>Thanks for shopping with <strong>SportZone</strong>.<br/>Your gear is on its way. Get ready to play!</p>
+    <p class="success-total" id="order-total"></p>
+    <a class="btn btn-primary btn-lg" href="/">Continue Shopping</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="logo">SPORT<span>ZONE</span></span>
+    <p>© 2025 SportZone · Built for Champions</p>
+    <div class="footer-cats">
+      <a href="/">Football</a>
+      <a href="/">Basketball</a>
+      <a href="/">Cricket</a>
+      <a href="/">Tennis</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  /* Show order total saved by cart.html in Indian Rupees */
+  const total = localStorage.getItem('orderTotal');
+  if (total) {
+    const formatted = '₹' + Number(total).toLocaleString('en-IN');
+    document.getElementById('order-total').textContent = `Order Total: ${formatted}`;
+    localStorage.removeItem('orderTotal');
+  }
+</script>
+</body>
+</html>

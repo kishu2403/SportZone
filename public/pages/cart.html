@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Cart · SportZone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══════════════════════════════════════════════ -->
+<header class="navbar">
+  <a class="logo" href="/">SPORT<span>ZONE</span></a>
+  <nav class="nav-links" id="nav-auth">
+    <a href="/login">Login</a>
+    <a class="btn btn-primary" href="/signup">Sign Up</a>
+  </nav>
+</header>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════════ -->
+<div class="container">
+  <h1 class="page-title">Your Cart</h1>
+  <div id="cart-container">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="logo">SPORT<span>ZONE</span></span>
+    <p>© 2025 SportZone · Built for Champions</p>
+    <div class="footer-cats">
+      <a href="/">Football</a>
+      <a href="/">Basketball</a>
+      <a href="/">Cricket</a>
+      <a href="/">Tennis</a>
+      <a href="/">Fitness</a>
+      <a href="/">Swimming</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+
+  /* ── Rupee formatter ────────────────────────────────────── */
+  function toRupees(amount) {
+    return '₹' + Number(amount).toLocaleString('en-IN');
+  }
+
+  /* ── Load cart from GET /api/cart ───────────────────────── */
+  async function loadCart() {
+    const container = document.getElementById('cart-container');
+    container.innerHTML = '<div class="spinner"></div>';
+
+    try {
+      const res = await fetch('/api/cart');
+
+      /* Not logged in */
+      if (res.status === 401) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔒</div>
+            <h3>Login Required</h3>
+            <p>Please login to view your cart.</p>
+            <a class="btn btn-primary" href="/login">Login</a>
+          </div>`;
+        return;
+      }
+
+      const data = await res.json();
+
+      /* Empty cart */
+      if (!data.cart || data.cart.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <h3>Your cart is empty</h3>
+            <p>Head back to the shop and grab some gear!</p>
+            <a class="btn btn-primary" href="/">Continue Shopping</a>
+          </div>`;
+        return;
+      }
+
+      /* Build cart UI */
+      container.innerHTML = `
+        <div class="cart-layout">
+
+          <!-- Cart Items -->
+          <div class="cart-items" id="cart-items-list">
+            ${data.cart.map(item => buildCartItem(item)).join('')}
+          </div>
+
+          <!-- Order Summary -->
+          <div class="cart-summary">
+            <h3>Order Summary</h3>
+            <div class="summary-row">
+              <span>Subtotal (<span id="item-count">${data.count}</span> item${data.count !== 1 ? 's' : ''})</span>
+              <span id="summary-subtotal">${toRupees(data.total)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span class="free">FREE</span>
+            </div>
+            <div class="summary-row summary-total">
+              <span>Total</span>
+              <span id="summary-total">${toRupees(data.total)}</span>
+            </div>
+            <button class="btn btn-primary btn-full" id="checkout-btn" onclick="checkout()">
+              Proceed to Checkout →
+            </button>
+            <a class="continue-link" href="/">← Continue Shopping</a>
+          </div>
+
+        </div>
+      `;
+
+    } catch (err) {
+      container.innerHTML = `
+        <p style="text-align:center;padding:4rem;color:var(--muted)">
+          Failed to load cart. Please refresh the page.
+        </p>`;
+    }
+  }
+
+  /* ── Build single cart item HTML ────────────────────────── */
+  function buildCartItem(item) {
+    return `
+      <div class="cart-item" id="item-${item.productId}">
+        <img
+          class="cart-item-img"
+          src="${item.image}"
+          alt="${item.name}"
+          onerror="this.src='https://images.unsplash.com/photo-1517649763962-0c623066013b?w=200'"
+        />
+        <div class="cart-item-meta">
+          <h4>${item.name}</h4>
+          <span class="cat-tag sm">${item.category}</span>
+          <p class="item-unit">${toRupees(item.price)} each</p>
+        </div>
+        <div class="cart-item-controls">
+          <div class="qty-controls">
+            <button onclick="updateQty('${item.productId}', ${item.quantity - 1})">−</button>
+            <span id="qty-${item.productId}">${item.quantity}</span>
+            <button onclick="updateQty('${item.productId}', ${item.quantity + 1})">+</button>
+          </div>
+          <button class="remove-btn" onclick="removeItem('${item.productId}')">
+            ✕ Remove
+          </button>
+        </div>
+        <div class="item-subtotal" id="sub-${item.productId}">
+          ${toRupees(item.price * item.quantity)}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Update totals in summary panel ─────────────────────── */
+  function updateSummaryUI(total, count) {
+    const subtotalEl = document.getElementById('summary-subtotal');
+    const totalEl    = document.getElementById('summary-total');
+    const countEl    = document.getElementById('item-count');
+    if (subtotalEl) subtotalEl.textContent = toRupees(total);
+    if (totalEl)    totalEl.textContent    = toRupees(total);
+    if (countEl)    countEl.textContent    = count;
+
+    /* Navbar cart badge */
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.classList.add('pop');
+      setTimeout(() => badge.classList.remove('pop'), 300);
+    }
+  }
+
+  /* ── POST /api/cart/update ───────────────────────────────── */
+  async function updateQty(productId, newQty) {
+    try {
+      const res  = await fetch('/api/cart/update', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ productId, quantity: newQty })
+      });
+      const data = await res.json();
+
+      if (newQty <= 0) {
+        /* Remove card from DOM */
+        const el = document.getElementById(`item-${productId}`);
+        if (el) {
+          el.style.transition = 'opacity .25s';
+          el.style.opacity    = '0';
+          setTimeout(() => el.remove(), 250);
+        }
+      } else {
+        /* Update quantity display */
+        const qtyEl = document.getElementById(`qty-${productId}`);
+        if (qtyEl) qtyEl.textContent = newQty;
+
+        /* Update item subtotal — need item price from DOM */
+        const unitEl = document.querySelector(`#item-${productId} .item-unit`);
+        if (unitEl) {
+          const priceText  = unitEl.textContent.replace('₹', '').replace(/,/g, '');
+          const unitPrice  = parseFloat(priceText);
+          const subEl      = document.getElementById(`sub-${productId}`);
+          if (subEl) subEl.textContent = toRupees(unitPrice * newQty);
+        }
+      }
+
+      updateSummaryUI(data.total, data.count);
+
+      /* If cart is now empty reload to show empty state */
+      if (data.count === 0) setTimeout(loadCart, 300);
+
+    } catch (err) {
+      showToast('Could not update quantity', true);
+    }
+  }
+
+  /* ── POST /api/cart/remove ───────────────────────────────── */
+  async function removeItem(productId) {
+    try {
+      const res  = await fetch('/api/cart/remove', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ productId })
+      });
+      const data = await res.json();
+
+      /* Animate removal */
+      const el = document.getElementById(`item-${productId}`);
+      if (el) {
+        el.style.transition = 'opacity .25s, transform .25s';
+        el.style.opacity    = '0';
+        el.style.transform  = 'translateX(20px)';
+        setTimeout(() => el.remove(), 250);
+      }
+
+      updateSummaryUI(data.total, data.count);
+      showToast('Item removed from cart');
+
+      if (data.count === 0) setTimeout(loadCart, 300);
+
+    } catch (err) {
+      showToast('Could not remove item', true);
+    }
+  }
+
+  /* ── POST /api/cart/checkout ─────────────────────────────── */
+  async function checkout() {
+    const btn = document.getElementById('checkout-btn');
+    btn.textContent = 'Processing…';
+    btn.disabled    = true;
+
+    try {
+      const res  = await fetch('/api/cart/checkout', { method: 'POST' });
+      const data = await res.json();
+
+      if (data.success) {
+        /* Save total in rupees for success page */
+        localStorage.setItem('orderTotal', data.total);
+        window.location.href = '/success';
+      } else {
+        showToast('Checkout failed. Try again.', true);
+        btn.textContent = 'Proceed to Checkout →';
+        btn.disabled    = false;
+      }
+    } catch (err) {
+      showToast('Server error. Please try again.', true);
+      btn.textContent = 'Proceed to Checkout →';
+      btn.disabled    = false;
+    }
+  }
+
+  /* ── Init ────────────────────────────────────────────────── */
+  loadCart();
+
+</script>
+</body>
+</html>

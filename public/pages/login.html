@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login · SportZone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="logo" href="/">SPORT<span>ZONE</span></a>
+  <nav class="nav-links">
+    <a href="/">Shop</a>
+    <a class="btn btn-ghost" href="/signup">Sign Up</a>
+  </nav>
+</header>
+
+<div class="auth-page">
+
+  <!-- Left visual panel -->
+  <div class="auth-visual">
+    <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80" alt="Athlete training"/>
+    <div class="auth-visual-overlay">
+      <p class="auth-tagline">TRAIN.<br/>COMPETE.<br/>WIN.</p>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-card">
+    <a class="logo auth-logo" href="/">SPORT<span>ZONE</span></a>
+    <h2>Welcome back</h2>
+    <p class="auth-sub">Sign in to your account</p>
+
+    <div id="alert-box" style="display:none;"></div>
+
+    <form class="auth-form" id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" required autofocus/>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="••••••••" required/>
+      </div>
+      <button class="btn btn-primary btn-full" type="submit" id="submit-btn">
+        Login →
+      </button>
+    </form>
+
+    <p class="auth-switch">Don't have an account? <a href="/signup">Sign Up</a></p>
+  </div>
+
+</div>
+
+<script>
+  // Check for success message from signup redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('registered') === '1') {
+    const box = document.getElementById('alert-box');
+    box.className = 'alert alert-success';
+    box.textContent = 'Account created! You can now log in.';
+    box.style.display = '';
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn   = document.getElementById('submit-btn');
+    const alert = document.getElementById('alert-box');
+    btn.textContent = 'Signing in…';
+    btn.disabled    = true;
+    alert.style.display = 'none';
+
+    const email    = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      const res  = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        alert.className     = 'alert alert-error';
+        alert.textContent   = data.error;
+        alert.style.display = '';
+        btn.textContent     = 'Login →';
+        btn.disabled        = false;
+        return;
+      }
+
+      // Success — redirect
+      const redirectTo = sessionStorage.getItem('returnTo') || '/';
+      sessionStorage.removeItem('returnTo');
+      window.location.href = redirectTo;
+    } catch (err) {
+      alert.className     = 'alert alert-error';
+      alert.textContent   = 'Server error. Please try again.';
+      alert.style.display = '';
+      btn.textContent     = 'Login →';
+      btn.disabled        = false;
+    }
+  });
+</script>
+</body>
+</html>

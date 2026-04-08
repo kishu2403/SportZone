@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up · SportZone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="logo" href="/">SPORT<span>ZONE</span></a>
+  <nav class="nav-links">
+    <a href="/">Shop</a>
+    <a class="btn btn-ghost" href="/login">Login</a>
+  </nav>
+</header>
+
+<div class="auth-page">
+
+  <!-- Left visual panel -->
+  <div class="auth-visual">
+    <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900&q=80" alt="Sports gear"/>
+    <div class="auth-visual-overlay">
+      <p class="auth-tagline">JOIN THE<br/>CHAMPIONS.</p>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-card">
+    <a class="logo auth-logo" href="/">SPORT<span>ZONE</span></a>
+    <h2>Create account</h2>
+    <p class="auth-sub">Start your journey today</p>
+
+    <div id="alert-box" style="display:none;"></div>
+
+    <form class="auth-form" id="signupForm">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input id="name" type="text" name="name" placeholder="John Doe" required autofocus/>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" required/>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="Min 6 characters" required minlength="6"/>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Repeat password" required/>
+      </div>
+      <button class="btn btn-primary btn-full" type="submit" id="submit-btn">
+        Create Account →
+      </button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a href="/login">Login</a></p>
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn   = document.getElementById('submit-btn');
+    const alert = document.getElementById('alert-box');
+    btn.textContent = 'Creating account…';
+    btn.disabled    = true;
+    alert.style.display = 'none';
+
+    const name            = document.getElementById('name').value.trim();
+    const email           = document.getElementById('email').value.trim();
+    const password        = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // Client-side validation
+    if (password !== confirmPassword) {
+      alert.className     = 'alert alert-error';
+      alert.textContent   = 'Passwords do not match.';
+      alert.style.display = '';
+      btn.textContent     = 'Create Account →';
+      btn.disabled        = false;
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/auth/signup', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name, email, password, confirmPassword })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        alert.className     = 'alert alert-error';
+        alert.textContent   = data.error;
+        alert.style.display = '';
+        btn.textContent     = 'Create Account →';
+        btn.disabled        = false;
+        return;
+      }
+
+      // Success — go to login with success message
+      window.location.href = '/login?registered=1';
+    } catch (err) {
+      alert.className     = 'alert alert-error';
+      alert.textContent   = 'Server error. Please try again.';
+      alert.style.display = '';
+      btn.textContent     = 'Create Account →';
+      btn.disabled        = false;
+    }
+  });
+</script>
+</body>
+</html>
